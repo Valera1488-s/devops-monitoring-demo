@@ -1,1 +1,64 @@
-// ... содержимое deploy.yml ...
+---
+# Главный плейбук для автоматизации развертывания мониторинга
+# Использует best practices DevOps: идемпотентность, безопасность, масштабируемость
+
+- name: Развертывание инфраструктуры мониторинга
+  hosts: all
+  become: yes
+
+  vars_files:
+    - group_vars/all.yml  # Подключаем общие переменные
+
+  tasks:
+    # Установка Docker
+    - name: Установка Docker
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    # Установка Docker Compose
+    - name: Установка Docker Compose
+      apt:
+        name: docker-compose
+        state: present
+
+    # Копирование docker-compose.yml на сервер
+    - name: Копирование docker-compose.yml
+      copy:
+        src: ../docker-compose.yml
+        dest: /opt/monitoring/docker-compose.yml
+
+    # Запуск сервисов через Docker Compose
+    - name: Запуск сервисов мониторинга
+      community.docker.docker_compose:
+        project_src: /opt/monitoring
+        files:
+          - docker-compose.yml
+        state: present
+        recreate: always
+
+    # Проверка доступности портов сервисов
+    - name: Проверка доступности Flask-приложения
+      wait_for:
+        port: 5000
+        host: 127.0.0.1
+        timeout: 30
+
+    - name: Проверка доступности Prometheus
+      wait_for:
+        port: 9090
+        host: 127.0.0.1
+        timeout: 30
+
+    - name: Проверка доступности Grafana
+      wait_for:
+        port: 3000
+        host: 127.0.0.1
+        timeout: 30
+
+    - name: Проверка доступности AlertManager
+      wait_for:
+        port: 9093
+        host: 127.0.0.1
+        timeout: 30
