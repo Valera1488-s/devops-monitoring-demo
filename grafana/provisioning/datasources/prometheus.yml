@@ -1,1 +1,12 @@
-// ... содержимое prometheus.yml ...
+# Конфигурация источников данных для Grafana
+# Этот файл автоматически применяется Grafana при запуске
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false

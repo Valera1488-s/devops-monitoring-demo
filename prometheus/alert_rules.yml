@@ -1,1 +1,42 @@
-// ... содержимое alert_rules.yml ...
+groups:
+- name: app_alerts
+  rules:
+  
+  # Оповещение для высокой задержки ответа
+  - alert: HighRequestLatency
+    expr: avg(rate(app_request_latency_seconds_sum[5m]) / rate(app_request_latency_seconds_count[5m])) > 1
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Высокая задержка ответа"
+      description: "Средняя задержка ответа за последние 5 минут превышает 1 секунду"
+
+  # Оповещение для большого количества ошибок
+  - alert: HighErrorRate
+    expr: sum(increase(app_requests_total{status=~"5.."}[5m])) / sum(increase(app_requests_total[5m])) * 100 > 10
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Высокий процент ошибок"
+      description: "Более 10% запросов завершаются ошибкой 5xx за последние 5 минут"
+      
+  # Оповещение для случайных ошибок
+  - alert: RandomErrorsIncreasing
+    expr: rate(app_random_errors_total[5m]) > 0.1
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Увеличение случайных ошибок"
+      description: "Частота случайных ошибок превышает порог (более 0.1 в секунду)"
+
+  - alert: InstanceDown
+    expr: up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Инстанс {{ $labels.instance }} недоступен"
+      description: "Экземпляр {{ $labels.instance }} не отвечает более 1 минуты." 
